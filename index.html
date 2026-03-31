@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referral Mining Calculator</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" />
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+    color: #ffffff;
+    background: linear-gradient(135deg, #1e1e2f, #2a2a3f);
+}
+
+.container {
+    max-width: 900px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin: 40px auto;
+    padding: 32px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 22px;
+    box-shadow:
+        0 20px 50px rgba(0,0,0,0.75),
+        inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.left-panel, .right-panel {
+    flex: 1;
+    min-width: 280px;
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #ffd6e8;
+    text-shadow: 0 0 14px rgba(255,180,210,0.4);
+}
+
+label {
+    display: block;
+    margin: 10px 0 6px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+input[readonly] {
+    background: rgba(255,255,255,0.08);
+    color: #ddd;
+    cursor: not-allowed;
+}
+
+button {
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(90deg, #ff6ec4, #7873f5);
+    box-shadow: 0 10px 25px rgba(120,115,245,0.4);
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 35px rgba(120,115,245,0.6);
+}
+
+table {
+    width: 100%;
+    margin-top: 0px;
+    border-collapse: collapse;
+}
+
+th {
+    background: rgba(255,255,255,0.12);
+    padding: 10px;
+    text-align: left;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+tr:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+th img {
+    width: 18px;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@media (max-width: 700px) {
+    .container {
+        flex-direction: column;
+        padding: 20px;
+    }
+    button {
+        font-size: 16px;
+        padding: 12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="left-panel">
+    <h1>Referral Mining Calculator</h1>
+
+    <label>Hashrate (TH/s)</label>
+    <input type="number" id="hashrate" value="1000">
+
+    <label>Network Difficulty</label>
+    <input type="number" id="difficulty" value="125860000000000">
+
+    <label>BTC → USD rate</label>
+    <input type="number" id="btcRate" value="68000">
+
+    <label>Reward per Block (BTC)</label>
+    <input type="number" id="rewardPerBlock" value="3.125">
+
+    <label>Miner pays pool fee (%)</label>
+    <input type="number" id="minerFee" value="4">
+
+    <label>Pool share (%)</label>
+    <input type="number" id="poolFee" value="0.4" readonly>
+
+    <label>Ambassador share (%)</label>
+    <input type="number" id="ambassadorFee" value="3.6">
+
+    <label>Your share (%) of Ambassador</label>
+    <input type="number" id="yourShare" value="10">
+
+    <button id="calcBtn">Calculate</button>
+  </div>
+
+  <div class="right-panel">
+    <table id="result" style="display:none;">
+        <tr>
+            <th>Participant</th>
+            <th>
+                <img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" alt="BTC">
+                BTC/day
+            </th>
+            <th>
+                <img src="https://assets.coingecko.com/coins/images/325/large/Tether.png" alt="USDT">
+                USD/day
+            </th>
+        </tr>
+
+        <tr><td>Pool</td><td id="poolBTC"></td><td id="poolUSD"></td></tr>
+        <tr><td>Ambassador</td><td id="ambBTC"></td><td id="ambUSD"></td></tr>
+        <tr><td>You</td><td id="youBTC"></td><td id="youUSD"></td></tr>
+        <tr><td>Miner</td><td id="minerBTC"></td><td id="minerUSD"></td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const fieldIds = [
+    'hashrate',
+    'difficulty',
+    'btcRate',
+    'rewardPerBlock',
+    'minerFee',
+    'ambassadorFee',
+    'yourShare'
+];
+
+function saveFields() {
+    fieldIds.forEach(id => {
+        const el = document.getElementById(id);
+        localStorage.setItem('calc_' + id, el.value);
+    });
+}
+
+function restoreFields() {
+    fieldIds.forEach(id => {
+        const savedValue = localStorage.getItem('calc_' + id);
+        if (savedValue !== null) {
+            document.getElementById(id).value = savedValue;
+        }
+    });
+}
+
+function updatePoolShare() {
+    const minerFee = parseFloat(document.getElementById('minerFee').value) || 0;
+    const ambassadorFee = parseFloat(document.getElementById('ambassadorFee').value) || 0;
+
+    const poolShare = Math.max(0, minerFee - ambassadorFee);
+    document.getElementById('poolFee').value = poolShare.toFixed(4).replace(/\.?0+$/, '');
+}
+
+function calculate() {
+    const H = parseFloat(document.getElementById('hashrate').value) * 1e12;
+    const D = parseFloat(document.getElementById('difficulty').value);
+    const rate = parseFloat(document.getElementById('btcRate').value);
+    const reward = parseFloat(document.getElementById('rewardPerBlock').value);
+
+    const minerFeePct = parseFloat(document.getElementById('minerFee').value) / 100;
+    const ambPct = parseFloat(document.getElementById('ambassadorFee').value) / 100;
+    const yourPct = parseFloat(document.getElementById('yourShare').value) / 100;
+
+    const poolFeeValue = parseFloat(document.getElementById('poolFee').value) || 0;
+    const poolPct = poolFeeValue / 100;
+
+    if ([H, D, rate, reward, minerFeePct, ambPct, yourPct, poolPct].some(v => Number.isNaN(v))) {
+        return;
+    }
+
+    if (ambPct > minerFeePct) {
+        alert("Ambassador share cannot be greater than Miner pays pool fee.");
+        return;
+    }
+
+    const networkHash = D * Math.pow(2, 32) / 600;
+    const btcRaw = (H / networkHash) * reward * 144;
+
+    const pool = btcRaw * poolPct;
+    const amb = btcRaw * ambPct;
+    const you = amb * yourPct;
+    const miner = btcRaw - pool - amb;
+
+    document.getElementById('poolBTC').textContent = pool.toFixed(8);
+    document.getElementById('poolUSD').textContent = (pool * rate).toFixed(2);
+
+    document.getElementById('ambBTC').textContent = amb.toFixed(8);
+    document.getElementById('ambUSD').textContent = (amb * rate).toFixed(2);
+
+    document.getElementById('youBTC').textContent = you.toFixed(8);
+    document.getElementById('youUSD').textContent = (you * rate).toFixed(2);
+
+    document.getElementById('minerBTC').textContent = miner.toFixed(8);
+    document.getElementById('minerUSD').textContent = (miner * rate).toFixed(2);
+
+    document.getElementById('result').style.display = 'table';
+    saveFields();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    restoreFields();
+    updatePoolShare();
+
+    fieldIds.forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+            updatePoolShare();
+            saveFields();
+        });
+    });
+
+    document.getElementById('calcBtn').addEventListener('click', calculate);
+});
+</script>
+
+</body>
+</html>
