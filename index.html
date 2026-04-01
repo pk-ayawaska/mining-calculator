@@ -423,16 +423,16 @@
       const miner = btcRaw - pool - amb;
 
       document.getElementById('poolBTC').textContent = pool.toFixed(8);
-      document.getElementById('poolUSD').textContent = (pool * rate).toFixed(2);
+      document.getElementById('poolUSD').textContent = (pool * rate).toFixed(4);
 
       document.getElementById('ambBTC').textContent = amb.toFixed(8);
-      document.getElementById('ambUSD').textContent = (amb * rate).toFixed(2);
+      document.getElementById('ambUSD').textContent = (amb * rate).toFixed(4);
 
       document.getElementById('youBTC').textContent = you.toFixed(8);
-      document.getElementById('youUSD').textContent = (you * rate).toFixed(2);
+      document.getElementById('youUSD').textContent = (you * rate).toFixed(4);
 
       document.getElementById('minerBTC').textContent = miner.toFixed(8);
-      document.getElementById('minerUSD').textContent = (miner * rate).toFixed(2);
+      document.getElementById('minerUSD').textContent = (miner * rate).toFixed(4);
 
       const resultTable = document.getElementById('result');
       resultTable.style.display = 'table';
